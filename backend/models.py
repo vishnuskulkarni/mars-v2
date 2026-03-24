@@ -4,6 +4,13 @@ from datetime import datetime
 import uuid
 
 
+class FeedbackEntry(BaseModel):
+    feedback: str
+    timestamp: datetime = Field(default_factory=datetime.now)
+    previous_output: str
+    revised_output: str = ""
+
+
 class AgentResult(BaseModel):
     agent_name: str
     status: Literal["pending", "running", "complete", "error"] = "pending"
@@ -11,6 +18,7 @@ class AgentResult(BaseModel):
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     error: Optional[str] = None
+    revision_count: int = 0
 
 
 class ResearchSession(BaseModel):
@@ -22,6 +30,7 @@ class ResearchSession(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now)
     agent_results: Dict[str, AgentResult] = {}
     synthesis: Optional[str] = None
+    feedback_history: Dict[str, List[FeedbackEntry]] = {}
 
 
 class AgentEvent(BaseModel):
@@ -45,3 +54,8 @@ class SessionSummary(BaseModel):
     research_question: str
     status: str
     created_at: datetime
+
+
+class FeedbackRequest(BaseModel):
+    agent: str
+    feedback: str

@@ -15,9 +15,9 @@ from backend.models import (
     AgentEvent,
     SubmitResponse,
     SessionSummary,
+    FeedbackRequest,
 )
-from backend.orchestrator import run_pipeline
-from backend.file_handler import save_upload_files
+from backend.orchestrator import run_pipeline, run_feedback
 
 
 # In-memory stores
@@ -27,16 +27,14 @@ event_queues: Dict[str, asyncio.Queue] = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: ensure working directories exist
     os.makedirs("data", exist_ok=True)
     os.makedirs("reports", exist_ok=True)
     yield
-    # Shutdown: nothing to clean up for in-memory store
 
 
 app = FastAPI(
     title="MARS — Multi-Agent Research System",
-    version="2.0.0",
+    version="2.1.0",
     lifespan=lifespan,
 )
 
@@ -58,16 +56,13 @@ async def submit_research(
     """Submit a new research question with optional literature and data files."""
     settings = get_settings()
 
-    # Validate file counts
     total_files = len(literature_files) + len(data_files)
     if total_files > settings.MAX_FILES:
         raise HTTPException(400, f"Too many files. Maximum is {settings.MAX_FILES}.")
 
-    # Create session
     session = ResearchSession(research_question=research_question)
     session_dir = os.path.join("data", session.session_id)
 
-    # Save files
     lit_paths = []
     data_paths = []
 
@@ -92,11 +87,9 @@ async def submit_research(
     session.literature_files = lit_paths
     session.data_files = data_paths
 
-    # Store session and create event queue
     sessions[session.session_id] = session
     event_queues[session.session_id] = asyncio.Queue()
 
-    # Launch pipeline in background
     asyncio.create_task(run_pipeline(session, event_queues[session.session_id]))
 
     return SubmitResponse(session_id=session.session_id)
@@ -116,17 +109,12 @@ async def stream_status(session_id: str):
         while True:
             try:
                 event: AgentEvent = await asyncio.wait_for(queue.get(), timeout=30.0)
-                yield {
-                    "event": "message",
-                    "data": event.model_dump_json(),
-                }
-                # Stop streaming after report is ready or pipeline error
+                yield {"event": "message", "data": event.model_dump_json()}
                 if event.type == "report_ready":
                     break
                 if event.type == "error" and event.agent == "pipeline":
                     break
             except asyncio.TimeoutError:
-                # Send keepalive
                 yield {"event": "ping", "data": ""}
 
     return EventSourceResponse(event_generator())
@@ -147,6 +135,7 @@ async def get_session_state(session_id: str):
             name: {
                 "status": result.status,
                 "has_output": result.output is not None,
+                "revision_count": result.revision_count,
             }
             for name, result in session.agent_results.items()
         },
@@ -163,16 +152,21 @@ async def get_report(session_id: str):
     if session.status != "complete":
         raise HTTPException(400, f"Session is not complete. Current status: {session.status}")
 
+    # Use Output agent result as the primary report, fall back to synthesis
+    output_result = session.agent_results.get("output")
+    primary_report = (output_result.output if output_result and output_result.output else session.synthesis)
+
     return {
         "session_id": session.session_id,
         "research_question": session.research_question,
-        "synthesis": session.synthesis,
+        "synthesis": primary_report,
         "agents": {
             name: {
                 "status": result.status,
                 "output": result.output,
                 "started_at": result.started_at.isoformat() if result.started_at else None,
                 "completed_at": result.completed_at.isoformat() if result.completed_at else None,
+                "revision_count": result.revision_count,
             }
             for name, result in session.agent_results.items()
         },
@@ -188,6 +182,15 @@ async def export_report(session_id: str):
     return FileResponse(report_path, filename=f"mars-report-{session_id[:8]}.md")
 
 
+@app.get("/api/plots/{session_id}/{filename}")
+async def get_plot(session_id: str, filename: str):
+    """Serve a generated plot image."""
+    plot_path = os.path.join("reports", session_id, "plots", filename)
+    if not os.path.exists(plot_path):
+        raise HTTPException(404, "Plot not found")
+    return FileResponse(plot_path, media_type="image/png")
+
+
 @app.get("/api/sessions")
 async def list_sessions():
     """List all past sessions."""
@@ -200,3 +203,26 @@ async def list_sessions():
         )
         for s in sorted(sessions.values(), key=lambda x: x.created_at, reverse=True)
     ]
+
+
+@app.post("/api/feedback/{session_id}")
+async def submit_feedback(session_id: str, request: FeedbackRequest):
+    """Submit feedback for an agent. Re-runs the agent and cascades downstream."""
+    if session_id not in sessions:
+        raise HTTPException(404, "Session not found")
+
+    session = sessions[session_id]
+    if session.status != "complete":
+        raise HTTPException(400, "Session must be complete before providing feedback")
+
+    valid_agents = list(session.agent_results.keys())
+    if request.agent not in valid_agents:
+        raise HTTPException(400, f"Invalid agent. Choose from: {valid_agents}")
+
+    # Create a fresh event queue for the feedback run
+    event_queues[session_id] = asyncio.Queue()
+    session.status = "running"
+
+    asyncio.create_task(run_feedback(session, request.agent, request.feedback, event_queues[session_id]))
+
+    return {"status": "revising", "agent": request.agent}

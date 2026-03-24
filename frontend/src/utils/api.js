@@ -39,3 +39,16 @@ export async function fetchSessions() {
 export function getExportUrl(sessionId) {
   return `${API_BASE}/report/${sessionId}/export`;
 }
+
+export async function submitFeedback(sessionId, agent, feedback) {
+  const res = await fetch(`${API_BASE}/feedback/${sessionId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ agent, feedback }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Feedback submit failed');
+  }
+  return res.json();
+}

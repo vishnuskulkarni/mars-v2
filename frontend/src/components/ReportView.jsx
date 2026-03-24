@@ -1,20 +1,23 @@
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Download, BookOpen, Database, Lightbulb, Shield, Layers } from 'lucide-react';
+import { Download, BookOpen, Database, Lightbulb, Shield, Layers, Search, FlaskConical, FileOutput, Map } from 'lucide-react';
 import { fetchReport, getExportUrl } from '../utils/api';
 
 const TABS = [
-  { key: 'synthesis', label: 'Full Report', icon: Layers },
+  { key: 'output', label: 'Full Report', icon: FileOutput },
+  { key: 'opportunity_map', label: 'Opportunity Map', icon: Map },
   { key: 'literature', label: 'Literature', icon: BookOpen },
-  { key: 'data', label: 'Data', icon: Database },
-  { key: 'hypothesis', label: 'Hypothesis', icon: Lightbulb },
+  { key: 'data', label: 'Data & Plots', icon: Database },
+  { key: 'hypothesis', label: 'Hypotheses', icon: Lightbulb },
+  { key: 'methods', label: 'Methods', icon: FlaskConical },
+  { key: 'scout', label: 'Discovered Papers', icon: Search },
   { key: 'critique', label: 'Critique', icon: Shield },
 ];
 
 export default function ReportView({ sessionId }) {
   const [report, setReport] = useState(null);
-  const [activeTab, setActiveTab] = useState('synthesis');
+  const [activeTab, setActiveTab] = useState('output');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,9 +46,39 @@ export default function ReportView({ sessionId }) {
     );
   }
 
-  const activeContent = activeTab === 'synthesis'
-    ? report.synthesis
-    : report.agents?.[activeTab]?.output || 'No output available.';
+  // Determine content for each tab
+  let activeContent;
+  if (activeTab === 'output') {
+    // Full report from Output agent, fall back to synthesis
+    activeContent = report.agents?.output?.output || report.synthesis || 'No report available.';
+    // Try to extract just Section 1 (before Opportunity Map)
+    const section2Idx = activeContent.indexOf('## SECTION 2');
+    if (section2Idx > 0) {
+      activeContent = activeContent.slice(0, section2Idx).trim();
+    }
+  } else if (activeTab === 'opportunity_map') {
+    const fullOutput = report.agents?.output?.output || '';
+    const section2Idx = fullOutput.indexOf('## SECTION 2');
+    activeContent = section2Idx > 0
+      ? fullOutput.slice(section2Idx).trim()
+      : 'No opportunity map available.';
+  } else {
+    activeContent = report.agents?.[activeTab]?.output || 'No output available.';
+  }
+
+  // Custom renderer to handle plot images
+  const imgRenderer = ({ src, alt, ...props }) => {
+    // Plot images from the API need proper handling
+    return (
+      <img
+        src={src}
+        alt={alt || ''}
+        className="max-w-full rounded-lg border border-border my-4"
+        loading="lazy"
+        {...props}
+      />
+    );
+  };
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
@@ -85,7 +118,10 @@ export default function ReportView({ sessionId }) {
 
       {/* Content */}
       <div className="bg-surface border border-border rounded-xl p-8 report-content">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{ img: imgRenderer }}
+        >
           {activeContent}
         </ReactMarkdown>
       </div>

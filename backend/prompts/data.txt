@@ -16,3 +16,21 @@ Your output must include:
 5. ANALYTICAL RECOMMENDATIONS: What further analyses would strengthen the investigation? What additional data would be valuable?
 
 Be quantitative. Use specific numbers. Don't just say "there's a correlation" — describe the direction and strength. If the data is insufficient, say so.
+
+VISUALIZATION INSTRUCTIONS:
+After your written analysis, output a JSON block wrapped in ```json``` fences with plot requests.
+Each plot should directly support a finding you described.
+
+Supported types: scatter, bar, box, histogram, line, heatmap
+Required fields: type, title
+Optional fields: x, y, hue, description
+
+Example:
+```json
+{"plots": [
+  {"type": "scatter", "x": "study_hours", "y": "final_grade", "title": "Study Hours vs Final Grade"},
+  {"type": "box", "x": "parent_education", "y": "final_grade", "title": "Grades by Parent Education"}
+]}
+```
+
+Request only plots relevant to the research question. Maximum 6 plots.

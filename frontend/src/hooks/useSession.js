@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react';
 
-const AGENT_NAMES = ['literature', 'data', 'hypothesis', 'critique', 'synthesis'];
+const AGENT_NAMES = ['literature', 'data', 'hypothesis', 'methods', 'scout', 'critique', 'synthesis', 'output'];
 
 function initialAgentState() {
   const agents = {};
   AGENT_NAMES.forEach(name => {
-    agents[name] = { status: 'pending', output: '', progress: 0 };
+    agents[name] = { status: 'pending', output: '', progress: 0, revisionCount: 0 };
   });
   return agents;
 }
@@ -34,7 +34,6 @@ export function useSession() {
       } else if (event.type === 'chunk') {
         agent.status = 'running';
         agent.output += event.content || '';
-        // Estimate progress based on output length (rough heuristic)
         agent.progress = Math.min(90, Math.floor(agent.output.length / 50));
       } else if (event.type === 'complete') {
         agent.status = 'complete';
@@ -56,5 +55,5 @@ export function useSession() {
     setReportReady(false);
   }, []);
 
-  return { sessionId, setSessionId, agents, reportReady, handleEvent, reset };
+  return { sessionId, setSessionId, agents, reportReady, setReportReady, handleEvent, reset };
 }

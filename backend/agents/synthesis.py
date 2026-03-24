@@ -12,6 +12,8 @@ class SynthesisAgent(BaseAgent):
             f"Literature Agent Output:\n{agent_outputs.get('literature', 'N/A')}\n\n"
             f"Data Agent Output:\n{agent_outputs.get('data', 'N/A')}\n\n"
             f"Hypothesis Agent Output:\n{agent_outputs.get('hypothesis', 'N/A')}\n\n"
+            f"Methods Agent Output:\n{agent_outputs.get('methods', 'N/A')}\n\n"
+            f"Scout Agent Output:\n{agent_outputs.get('scout', 'N/A')}\n\n"
             f"Critique Agent Output:\n{agent_outputs.get('critique', 'N/A')}"
         )
         return await super().run(context, question, event_queue)

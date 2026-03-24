@@ -6,21 +6,23 @@ import AgentDashboard from './components/AgentDashboard';
 import ReportView from './components/ReportView';
 import { useSSE } from './hooks/useSSE';
 import { useSession } from './hooks/useSession';
-import { submitResearch, fetchReport } from './utils/api';
+import { submitResearch, fetchReport, submitFeedback } from './utils/api';
 
 function App() {
   const [view, setView] = useState('input'); // 'input' | 'running' | 'report'
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [question, setQuestion] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRevising, setIsRevising] = useState(false);
 
-  const { sessionId, setSessionId, agents, reportReady, handleEvent, reset } = useSession();
+  const { sessionId, setSessionId, agents, reportReady, setReportReady, handleEvent, reset } = useSession();
 
-  // Connect SSE when we have a session
+  // Connect SSE when we have a running session
   const onSSEEvent = useCallback((event) => {
     handleEvent(event);
     if (event.type === 'report_ready') {
       setView('report');
+      setIsRevising(false);
     }
   }, [handleEvent]);
 
@@ -44,6 +46,7 @@ function App() {
     reset();
     setView('input');
     setQuestion('');
+    setIsRevising(false);
   };
 
   const handleSelectSession = async (sid) => {
@@ -53,8 +56,21 @@ function App() {
       setQuestion(report.research_question);
       setView('report');
     } catch {
-      // Session might still be running, go to dashboard view
       setView('running');
+    }
+  };
+
+  const handleFeedback = async (agentName, feedbackText) => {
+    if (!sessionId) return;
+    try {
+      setIsRevising(true);
+      setReportReady(false);
+      await submitFeedback(sessionId, agentName, feedbackText);
+      // Switch to running view to show SSE updates
+      setView('running');
+    } catch (err) {
+      alert('Feedback failed: ' + err.message);
+      setIsRevising(false);
     }
   };
 
@@ -77,7 +93,12 @@ function App() {
       )}
 
       {view === 'running' && (
-        <AgentDashboard agents={agents} question={question} />
+        <AgentDashboard
+          agents={agents}
+          question={question}
+          onFeedback={handleFeedback}
+          isRevising={isRevising}
+        />
       )}
 
       {view === 'report' && sessionId && (
