@@ -17,9 +17,30 @@ cd ..
 # Create .env from template if it doesn't exist
 if [ ! -f .env ]; then
     cp .env.example .env
-    echo ""
-    echo "WARNING: Please add your ANTHROPIC_API_KEY to .env"
+    echo "Created .env with default settings (Ollama mode — free, local)"
 fi
 
+# Install Ollama if not already installed
+if ! command -v ollama &> /dev/null; then
+    echo "Installing Ollama..."
+    curl -fsSL https://ollama.com/install.sh | sh
+    echo "Ollama installed"
+else
+    echo "Ollama already installed"
+fi
+
+# Pull the default model
+echo "Pulling qwen2.5:7b model (this may take a few minutes on first run)..."
+ollama pull qwen2.5:7b
+
 echo ""
-echo "Setup complete! Run ./scripts/start.sh to launch MARS."
+echo "Setup complete!"
+echo ""
+echo "   Default mode: Ollama (free, local)"
+echo "   Model: qwen2.5:7b"
+echo ""
+echo "   To use Claude API instead, edit .env:"
+echo "     LLM_PROVIDER=anthropic"
+echo "     ANTHROPIC_API_KEY=your-key-here"
+echo ""
+echo "   Run ./scripts/start.sh to launch MARS."

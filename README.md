@@ -24,7 +24,7 @@ MARS works differently. It dispatches **five specialist agents** that each focus
 
 ```
 Phase 1 (Parallel):     Literature ───┐
-                         Data ─────────┤── Phase 2: Critique ─── Phase 3: Synthesis
+                         Data ─────────┤──→ Phase 2: Critique ──→ Phase 3: Synthesis
                          Hypothesis ───┘
 ```
 
@@ -40,7 +40,7 @@ You watch all of this happen in real-time through the dashboard.
 
 - Python 3.11 or higher
 - Node.js 18 or higher
-- An [Anthropic API key](https://console.anthropic.com/)
+- That's it! MARS runs on free local AI models by default (no API key needed)
 
 ### Setup (one time)
 
@@ -50,11 +50,7 @@ cd mars-v2
 ./scripts/setup.sh
 ```
 
-Then add your API key:
-```bash
-# Open .env and paste your Anthropic API key
-nano .env
-```
+The setup script will install Ollama (free, local AI) and download the model automatically.
 
 ### Launch
 
@@ -63,6 +59,14 @@ nano .env
 ```
 
 Open **http://localhost:5173** in your browser. That's it.
+
+### Want higher quality output? (Optional)
+
+MARS can also use Claude (Anthropic) for higher quality analysis. Edit `.env`:
+```
+LLM_PROVIDER=anthropic
+ANTHROPIC_API_KEY=your-key-here
+```
 
 ---
 
@@ -108,8 +112,10 @@ All settings are in the `.env` file:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ANTHROPIC_API_KEY` | (required) | Your Anthropic API key |
-| `CLAUDE_MODEL` | `claude-opus-4-6` | Which Claude model the agents use |
+| `LLM_PROVIDER` | `ollama` | `ollama` (free, local) or `anthropic` (paid, cloud) |
+| `OLLAMA_MODEL` | `qwen2.5:7b` | Which Ollama model to use |
+| `ANTHROPIC_API_KEY` | — | Your Anthropic API key (only needed if provider is `anthropic`) |
+| `CLAUDE_MODEL` | `claude-opus-4-6` | Which Claude model to use (only if provider is `anthropic`) |
 | `MAX_FILE_SIZE_MB` | `50` | Maximum file size for uploads |
 | `MAX_FILES` | `20` | Maximum number of files per session |
 | `PORT` | `8000` | Backend server port |
@@ -139,7 +145,7 @@ mars/
 
 - **Backend:** Python, FastAPI, Anthropic SDK
 - **Frontend:** React, Vite, Tailwind CSS
-- **AI:** Claude (Anthropic) — each agent is a specialized Claude instance
+- **AI:** Ollama + Qwen 2.5 (free, local) by default — optionally Claude (Anthropic) for higher quality
 - **Communication:** Server-Sent Events (SSE) for real-time streaming
 
 ---
