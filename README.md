@@ -18,6 +18,17 @@ account of what MARS can and can't do (it's also shown on the app's home page).
 
 ---
 
+## How I implemented this
+
+- Deployed MARS on a lab-managed VM, configured once with the environment and a
+  shared service-account API key, set to auto-start so it stays available.
+- Researchers access it over the Harvard network through a single browser link —
+  no install, no API key, no setup on their end.
+- They open the link and use it: submit a question, papers, and data; get a
+  grounded report back.
+
+---
+
 ## Why this is different from "ask a chatbot"
 
 A single chatbot is agreeable: it produces something complete-looking and
