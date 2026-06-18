@@ -1,0 +1,83 @@
+# ===========================================================================
+# MARS configuration (build spec v2).
+#   * model routing      — which provider/model serves each agent
+#   * confidence          — thresholds for the computed-confidence function (§6)
+#   * scoring             — direction-viability weights + presets (§7)
+#   * editorial           — iterate-or-finish loop bounds (§2, §4)
+# Edit this file to retune; no code change needed.
+# ===========================================================================
+
+# --------------------------------------------------------------------------- #
+# Model routing (carry-over from v1). default_provider applies to any agent
+# without an explicit provider. Reassign any agent to openrouter/ollama here.
+# --------------------------------------------------------------------------- #
+default_provider: anthropic
+
+providers:
+  anthropic:
+    model: "claude-sonnet-4-6"     # the lab Claude service-account model
+    max_tokens: 4096
+  openrouter:
+    model: "deepseek/deepseek-chat"
+    max_tokens: 4096
+  ollama:
+    model: "qwen2.5:14b"
+    base_url: "http://localhost:11434"
+
+agents:
+  literature: { provider: anthropic }
+  scout:      { provider: anthropic }
+  data:       { provider: anthropic }   # routes the data agent's PLANNING calls; code runs locally
+  hypothesis: { provider: anthropic }
+  methods:    { provider: anthropic }
+  critique:   { provider: anthropic }
+  red_team:   { provider: anthropic }
+  checks:     { provider: anthropic }   # null-interesting / so-what gate
+  editorial:  { provider: anthropic }   # (reserved) optional narrative for refinement notes
+
+# --------------------------------------------------------------------------- #
+# Computed confidence (§6). Confidence is DERIVED from ledger state, never
+# asserted by an agent. The principle is fixed; only thresholds are tunable.
+#   high   : grounded AND >= min_corroborators_for_high independent agents AND
+#            no unresolved critique objection at/above blocking_severity
+#   medium : grounded, uncontested, but single-agent (no independent corrob.)
+#   low    : weakly grounded OR contradicted OR carrying an unresolved
+#            objection at/above blocking_severity  (surfaced, never hidden)
+# --------------------------------------------------------------------------- #
+confidence:
+  min_corroborators_for_high: 2     # independent agents (excludes the raiser)
+  blocking_severity: "high"         # objection severity that caps a claim at low
+  contradiction_caps_low: true      # any contradiction forces low
+
+# --------------------------------------------------------------------------- #
+# Direction scoring (§7). score = sum(weight * factor). Factors are 0..1 and
+# derived from the ledger. Presets are selectable per run in the UI; same
+# evidence, different ranking. Weights need not sum to 1 (they are normalised).
+# --------------------------------------------------------------------------- #
+scoring:
+  presets:
+    Balanced:         { novelty: 0.25, feasibility: 0.25, datafit: 0.25, robustness: 0.25 }
+    Novelty-seeking:  { novelty: 0.45, feasibility: 0.15, datafit: 0.15, robustness: 0.25 }
+    Feasibility-first: { novelty: 0.15, feasibility: 0.40, datafit: 0.30, robustness: 0.15 }
+  default_preset: Balanced
+  # A direction is "endorsed" only if it clears this score AND its confidence
+  # tier is not low. Everything else is surfaced as contested / dead-end.
+  endorse_min_score: 0.50
+
+# --------------------------------------------------------------------------- #
+# Editorial controller (§2, §4). The loop iterates until directions clear the
+# bar or a bound is hit. Bounds keep cost finite.
+# --------------------------------------------------------------------------- #
+editorial:
+  max_passes: 3                     # hard ceiling on iterate-to-Layer-1 loops
+  max_agent_calls: 60               # cost ceiling (counts model calls this run)
+  target_endorsed_directions: 2     # stop early once this many clear the bar
+  resolve_objections_before_finish: true
+
+# --------------------------------------------------------------------------- #
+# Data sandbox (§8). Bounds for executing agent-written analysis code locally.
+# --------------------------------------------------------------------------- #
+data_sandbox:
+  max_analyses_per_pass: 8          # cap specifications attempted per pass
+  exec_timeout_seconds: 30          # per-analysis subprocess timeout
+  max_plan_iterations: 2            # plan -> run -> repair attempts per analysis

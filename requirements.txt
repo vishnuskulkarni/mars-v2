@@ -1,16 +1,29 @@
+# --- Streamlit internal tool (the deployment built per MARS_BUILD_SPEC.md) ---
+streamlit>=1.36.0
+anthropic>=0.39.0          # lab Claude service-account path (default provider)
+openai>=1.40.0             # OpenAI-compatible client for the OpenRouter path
+requests>=2.31.0           # Ollama path + Semantic Scholar search
+pyyaml>=6.0                # config.yaml (model routing)
+python-dotenv>=1.0.0       # loads ANTHROPIC_API_KEY / OPENROUTER_API_KEY from .env
+pydantic>=2.5.0
+pandas>=2.1.0
+numpy>=1.26.0
+scipy>=1.11.0             # data sandbox: stats tests
+statsmodels>=0.14.0       # data sandbox: OLS/logit/fixed-effects
+scikit-learn>=1.3.0       # data sandbox: ML utilities
+openpyxl>=3.1.0            # .xlsx support
+pypdf>=4.0.0               # primary PDF text extraction
+pdfplumber>=0.10.0         # PDF extraction fallback
+PyMuPDF>=1.23.0            # PDF extraction fallback
+matplotlib>=3.8.0
+seaborn>=0.13.0
+reportlab>=4.0.0           # optional PDF report export
+
+# --- Legacy v2.1 FastAPI + React app (backend/) — kept for reference ---
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
 sse-starlette>=1.6.0
 httpx>=0.25.0
-anthropic>=0.39.0
 python-multipart>=0.0.6
-pydantic>=2.5.0
 pydantic-settings>=2.1.0
-PyMuPDF>=1.23.0
-pdfplumber>=0.10.0
-pandas>=2.1.0
-openpyxl>=3.1.0
-python-dotenv>=1.0.0
 aiofiles>=23.2.0
-matplotlib>=3.8.0
-seaborn>=0.13.0

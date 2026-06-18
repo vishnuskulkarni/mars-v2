@@ -1,4 +1,6 @@
 .env
+.env.local
+.claude/
 __pycache__/
 *.pyc
 .venv/
@@ -8,4 +10,7 @@ data/*
 !data/.gitkeep
 reports/*
 !reports/.gitkeep
+# Streamlit tool: per-run artifacts (evidence) stay local, not in git
+runs/*
+!runs/.gitkeep
 .DS_Store
