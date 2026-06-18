@@ -90,19 +90,15 @@ if you're curious.
 
 ---
 
-## Hosting it yourself (only if you're running the machine)
+## Hosting & deployment (admins only)
 
-Most people can ignore this. If you're the one hosting MARS for the lab:
+You don't need this. MARS runs on an always-on lab-managed VM, configured once
+with a shared service-account key and set to auto-start, so it stays available
+at the link above — nobody installs anything, sets up a key, or runs a server.
 
-```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env          # add the lab Claude key: ANTHROPIC_API_KEY=sk-ant-...
-streamlit run app.py --server.address 0.0.0.0 --server.port 8501
-```
-
-Then share `http://<machine-ip>:8501` with everyone. The README has the full
-setup and the honest notes on what MARS does and doesn't guarantee.
+If you're the admin maintaining that VM, the full setup, configuration, and the
+honest notes on what MARS does and doesn't guarantee are in the
+[README](README.md).
 
 ---
 
