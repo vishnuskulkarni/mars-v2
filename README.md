@@ -6,8 +6,7 @@ explicit "these are likely dead ends, and here's why" section, and an auditable
 trail for every claim. It is built to tell you the **truth** about your question,
 not to fill a page.
 
-It runs as a small Streamlit web app on one lab-controlled machine. 3–5 research
-assistants use it through a browser; every run is saved locally as evidence.
+It's a small internal web app — every run is saved locally as evidence.
 
 > Built per `MARS_BUILD_SPEC_v2.md`. v2 replaces the earlier linear-pipeline spec
 > with a layered, looping research system (evidence ledger, executed data
@@ -20,12 +19,7 @@ account of what MARS can and can't do (it's also shown on the app's home page).
 
 ## How I implemented this
 
-- Deployed MARS on a lab-managed VM, configured once with the environment and a
-  shared service-account API key, set to auto-start so it stays available.
-- Researchers access it over the Harvard network through a single browser link —
-  no install, no API key, no setup on their end.
-- They open the link and use it: submit a question, papers, and data; get a
-  grounded report back.
+Runs on a lab-managed VM. Used internally by lab researchers — one link, no setup on their end.
 
 ---
 

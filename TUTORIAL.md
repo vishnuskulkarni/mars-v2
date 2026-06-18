@@ -92,13 +92,9 @@ if you're curious.
 
 ## Hosting & deployment (admins only)
 
-You don't need this. MARS runs on an always-on lab-managed VM, configured once
-with a shared service-account key and set to auto-start, so it stays available
-at the link above — nobody installs anything, sets up a key, or runs a server.
+Runs on a lab-managed VM. Used internally by lab researchers — one link, no setup on their end.
 
-If you're the admin maintaining that VM, the full setup, configuration, and the
-honest notes on what MARS does and doesn't guarantee are in the
-[README](README.md).
+Admins maintaining the VM: full setup and configuration are in the [README](README.md).
 
 ---
 
